@@ -9,6 +9,7 @@ import { Button } from "@bentley/ui-core";
 import React, { useEffect, useState } from "react";
 import { useCallback } from "react";
 import Select from "react-select";
+import { ChangedElementsFeatureOverrides } from "./ChangedElemensFeatureOverrides";
 import { ChangedElementsClient } from "./ChangedElementsClient";
 import "./ChangedElementsWidget.scss";
 
@@ -75,12 +76,17 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) {
     console.log(changedElements);
     const viewport = IModelApp.viewManager.selectedView;
     if (changedElements && viewport) {
-      // Emphasize the changed elements in the view
-      EmphasizeElements.getOrCreate(viewport).emphasizeElements(
-        changedElements.elements,
-        viewport
-      );
-      setChangedElements(changedElements);
+      // Ensure we are not currently visualizing changed elements
+      const oldProvider = viewport.findFeatureOverrideProviderOfType(ChangedElementsFeatureOverrides);
+      if (oldProvider) {
+        // If we are, drop the override provider so that we start with a clean viewport
+        viewport.dropFeatureOverrideProvider(oldProvider);
+      }
+      // Create our feature override provider object
+      const overrideProvider = new ChangedElementsFeatureOverrides(changedElements);
+      // Add it to the viewport
+      viewport.addFeatureOverrideProvider(overrideProvider);
+        setChangedElements(changedElements);
     }
   }, [selectedVersion]);
 
