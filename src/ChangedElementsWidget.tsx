@@ -4,11 +4,12 @@
 *--------------------------------------------------------------------------------------------*/
 import { Version } from "@bentley/imodelhub-client";
 import { ChangedElements } from "@bentley/imodeljs-common";
-import { AuthorizedFrontendRequestContext, IModelApp, IModelConnection } from "@bentley/imodeljs-frontend";
+import { AuthorizedFrontendRequestContext, EmphasizeElements, IModelApp, IModelConnection } from "@bentley/imodeljs-frontend";
 import { Button } from "@bentley/ui-core";
 import React, { useEffect, useState } from "react";
 import { useCallback } from "react";
 import Select from "react-select";
+import { ChangedElementsClient } from "./ChangedElementsClient";
 import "./ChangedElementsWidget.scss";
 
 /**
@@ -53,12 +54,46 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) {
 
   // Callback for when clicking the 'Visualize Changed Elements' button
   const onVisualizeChangedElements = useCallback(async () => {
-    // We will implement this later in the tutorial
+    const iModel = props.iModel;
+    if (iModel === undefined || iModel.changeSetId === undefined) {
+      console.error("iModel is not valid");
+      return;
+    }
+    if (selectedVersion?.changeSetId === undefined) {
+      console.error("Selected version is not defined");
+      return;
+    }
+    const client = new ChangedElementsClient();
+    const endChangesetId = iModel.changeSetId;
+    const startChangesetId = selectedVersion?.changeSetId;
+    const changedElements = await client.getComparison(
+      iModel,
+      startChangesetId,
+      endChangesetId
+    );
+    // Log the results to console to inspect them
+    console.log(changedElements);
+    const viewport = IModelApp.viewManager.selectedView;
+    if (changedElements && viewport) {
+      // Emphasize the changed elements in the view
+      EmphasizeElements.getOrCreate(viewport).emphasizeElements(
+        changedElements.elements,
+        viewport
+      );
+      setChangedElements(changedElements);
+    }
   }, [selectedVersion]);
 
   // Callback for when clicking the 'Enable Change Tracking' button
   const onEnableTracking = useCallback(async () => {
-    // We will implement this later in the tutorial
+     const iModel = props.iModel;
+    // Ensure our iModel is defined
+    if (iModel) {
+      // Create a changed elements client object
+      const client = new ChangedElementsClient();
+      // Enable change tracking for the iModel
+      await client.enableChangeTracking(iModel, true);
+    }
   }, []);
 
   const selectOptions = [];
