@@ -3,7 +3,7 @@
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 import { DbOpcode, Id64String } from "@bentley/bentleyjs-core";
-import { ChangedElements, ColorDef, FeatureAppearance } from "@bentley/imodeljs-common";
+import { ChangedElements, FeatureAppearance } from "@bentley/imodeljs-common";
 import { FeatureOverrideProvider, FeatureSymbology, Viewport } from "@bentley/imodeljs-frontend";
 
 /**

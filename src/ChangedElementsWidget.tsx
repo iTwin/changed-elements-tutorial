@@ -3,8 +3,7 @@
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 import { Version } from "@bentley/imodelhub-client";
-import { ChangedElements } from "@bentley/imodeljs-common";
-import { AuthorizedFrontendRequestContext, EmphasizeElements, IModelApp, IModelConnection } from "@bentley/imodeljs-frontend";
+import { AuthorizedFrontendRequestContext, IModelApp, IModelConnection } from "@bentley/imodeljs-frontend";
 import { Button } from "@bentley/ui-core";
 import React, { useEffect, useState } from "react";
 import { useCallback } from "react";
@@ -36,7 +35,7 @@ function useNamedVersions(props: { iModel: IModelConnection | undefined }) {
     };
     // Call the asynchronous function to load named versions
     loadChangesets();
-  }, []);
+  }, [props.iModel]);
 
   return versions;
 }
@@ -50,8 +49,6 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) {
   const versions = useNamedVersions(props);
   // Named version selected in dropdown
   const [selectedVersion, setSelectedVersion] = useState<Version | undefined>();
-  // Changed elements that will be loaded and displayed in a list
-  const [changedElements, setChangedElements] = useState<ChangedElements | undefined>(undefined);
 
   // Callback for when clicking the 'Visualize Changed Elements' button
   const onVisualizeChangedElements = useCallback(async () => {
@@ -86,9 +83,8 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) {
       const overrideProvider = new ChangedElementsFeatureOverrides(changedElements);
       // Add it to the viewport
       viewport.addFeatureOverrideProvider(overrideProvider);
-        setChangedElements(changedElements);
     }
-  }, [selectedVersion]);
+  }, [selectedVersion, props.iModel]);
 
   // Callback for when clicking the 'Enable Change Tracking' button
   const onEnableTracking = useCallback(async () => {
@@ -100,7 +96,7 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) {
       // Enable change tracking for the iModel
       await client.enableChangeTracking(iModel, true);
     }
-  }, []);
+  }, [props.iModel]);
 
   const selectOptions = [];
   if (versions) {
