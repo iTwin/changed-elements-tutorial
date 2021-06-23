@@ -13,6 +13,7 @@ import React, { useEffect, useState } from "react";
 import { Header } from "./Header";
 import { history } from "./history";
 import { AuthorizationClient } from "./AuthorizationClient";
+import { ChangedElementsUiProvider } from "./ChangedElementsUiProvider";
 
 const App: React.FC = () => {
   const [isAuthorized, setIsAuthorized] = useState(
@@ -133,7 +134,7 @@ const App: React.FC = () => {
           iModelId={iModelId}
           authConfig={{ config: authConfig }}
           onIModelAppInit={onIModelAppInit}
-          uiProviders={[]}
+          uiProviders={[new ChangedElementsUiProvider()]}
         />
       )}
     </div>
