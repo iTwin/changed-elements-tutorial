@@ -161,8 +161,8 @@ export class ChangedElementsClient {
       headers: this.getHeaderOptions(accessToken),
       body: {
         enable: value,
-        iModelId: iModelId,
-        projectId: projectId,
+        iModelId,
+        projectId,
       }
     };
     try {
