@@ -22,37 +22,30 @@ export class ChangedElementsClient {
   /**
    * Function to form the URL for the comparison operation of changed elements API
    * @param iModelId iModel Id to query for
-   * @param contextId Project Id of the iModel
+   * @param projectId Project Id of the iModel
    * @param startChangesetId Start changeset for comparison data
    * @param endChangesetId End changeset for comparison data
    * @returns Url for querying changed elements from the changed elements API
    */
   public getComparisonOperationUrl(
     iModelId: string,
-    contextId: string,
+    projectId: string,
     startChangesetId: string,
     endChangesetId: string
   ) {
     return this.getUrl() +
       "/comparison?iModelId=" + iModelId +
-      "&contextId=" + contextId +
+      "&projectId=" + projectId +
       "&startChangesetId=" + startChangesetId +
       "&endChangesetId=" + endChangesetId;
   }
 
   /**
    * Function to form the URL for the enable change tracking operation of changed elements API
-   * @param iModelId iModel Id to query for
-   * @param contextId Project Id of the iModel
    * @returns Url for enabling/disabling change tracking
    */
-  public getEnableChangeTrackingUrl(
-    iModelId: string,
-    contextId: string,
-  ) {
-    return this.getUrl() + 
-    "/tracking?iModelId=" + iModelId +
-    "&contextId=" + contextId;
+  public getEnableChangeTrackingUrl() {
+    return this.getUrl() + "/tracking"
   }
 
   /**
@@ -100,16 +93,16 @@ export class ChangedElementsClient {
     }
     // Create a request context
     const requestContext = new AuthorizedClientRequestContext(accessToken);
-    // Parse out iModel Id and Context Id
+    // Parse out iModel Id and Project Id
     const iModelId = iModel.iModelId;
-    const contextId = iModel.contextId;
+    const projectId = iModel.contextId;
     // Ensure they are properly defined
-    if (iModelId === undefined || contextId === undefined) {
+    if (iModelId === undefined || projectId === undefined) {
       throw new Error("IModel is not properly defined");
     }
 
     // Get the request URL for the comparison operation
-    const url: string = this.getComparisonOperationUrl(iModelId, contextId, startChangesetId, endChangesetId);
+    const url: string = this.getComparisonOperationUrl(iModelId, projectId, startChangesetId, endChangesetId);
     // Options for the request
     const options: RequestOptions = {
       method: "GET",
@@ -152,22 +145,24 @@ export class ChangedElementsClient {
     }
     // Create a request context
     const requestContext = new AuthorizedClientRequestContext(accessToken);
-    // Parse out iModel Id and Context Id
+    // Parse out iModel Id and Project Id
     const iModelId = iModel.iModelId;
-    const contextId = iModel.contextId;
+    const projectId = iModel.contextId;
     // Ensure they are properly defined
-    if (iModelId === undefined || contextId === undefined) {
+    if (iModelId === undefined || projectId === undefined) {
       throw new Error("IModel is not properly defined");
     }
 
     // Get the request URL for the comparison operation
-    const url: string = this.getEnableChangeTrackingUrl(iModelId, contextId);
+    const url: string = this.getEnableChangeTrackingUrl();
     // Options for the request
     const options: RequestOptions = {
       method: "PUT",
       headers: this.getHeaderOptions(accessToken),
       body: {
-        enable: value
+        enable: value,
+        iModelId: iModelId,
+        projectId: projectId,
       }
     };
     try {
