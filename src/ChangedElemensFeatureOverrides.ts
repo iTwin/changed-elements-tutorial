@@ -2,9 +2,9 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { DbOpcode, Id64String } from "@bentley/bentleyjs-core";
-import { ChangedElements, FeatureAppearance } from "@bentley/imodeljs-common";
-import { FeatureOverrideProvider, FeatureSymbology, Viewport } from "@bentley/imodeljs-frontend";
+import { DbOpcode, Id64String } from "@itwin/core-bentley";
+import { ChangedElements, FeatureAppearance } from "@itwin/core-common";
+import { FeatureOverrideProvider, FeatureSymbology, Viewport } from "@itwin/core-frontend";
 
 /**
  * Feature Override Provider to visualize changed elements and colorize them
@@ -67,7 +67,10 @@ export class ChangedElementsFeatureOverrides implements FeatureOverrideProvider 
     });
     // Override the inserted elements with the appearance
     this._insertedElements.forEach((elementId: string) => {
-      overrides.overrideElement(elementId, insertedAppearance);
+      overrides.override({
+        elementId,
+        appearance: insertedAppearance
+      });
     });
 
     // Create an appearance with the color blue for updated elements
@@ -77,7 +80,10 @@ export class ChangedElementsFeatureOverrides implements FeatureOverrideProvider 
     });
     // Override the updated elements with the appearance
     this._updatedElements.forEach((elementId: string) => {
-      overrides.overrideElement(elementId, updatedAppearance);
+      overrides.override({
+        elementId,
+        appearance: updatedAppearance
+      });
     });
   }
 }

@@ -2,10 +2,9 @@
  * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
  * See LICENSE.md in the project root for license terms and full copyright notice.
  *--------------------------------------------------------------------------------------------*/
-import { ChangedElements } from "@bentley/imodeljs-common";
-import { IModelConnection } from "@bentley/imodeljs-frontend";
-import { AccessToken, AuthorizedClientRequestContext, IncludePrefix, request, RequestOptions } from "@bentley/itwin-client";
-import { AuthorizationClient } from "./AuthorizationClient";
+import { ChangedElements } from "@itwin/core-common";
+import { IModelApp, IModelConnection } from "@itwin/core-frontend";
+import { Authorization } from "@itwin/imodels-client-management";
 
 /**
  * Class for using the Changed Elements API
@@ -22,20 +21,20 @@ export class ChangedElementsClient {
   /**
    * Function to form the URL for the comparison operation of changed elements API
    * @param iModelId iModel Id to query for
-   * @param projectId Project Id of the iModel
+   * @param iTwinId iTwin Id of the iModel
    * @param startChangesetId Start changeset for comparison data
    * @param endChangesetId End changeset for comparison data
    * @returns Url for querying changed elements from the changed elements API
    */
   public getComparisonOperationUrl(
     iModelId: string,
-    projectId: string,
+    iTwinId: string,
     startChangesetId: string,
     endChangesetId: string
   ) {
     return this.getUrl() +
       "/comparison?iModelId=" + iModelId +
-      "&projectId=" + projectId +
+      "&iTwinId=" + iTwinId +
       "&startChangesetId=" + startChangesetId +
       "&endChangesetId=" + endChangesetId;
   }
@@ -49,29 +48,18 @@ export class ChangedElementsClient {
   }
 
   /**
-   * Tries to get an access token from the authorization client
-   * Should work if your .env is setup properly and your application's client
-   * is setup correctly
-   * @returns AccessToken or undefined
-   */
-  private async getAccessToken(): Promise<AccessToken | undefined> {
-    try {
-      return await AuthorizationClient.apimClient.getAccessToken();
-    } catch(e) {
-      console.error(e);
-      return undefined;
-    }
-  }
-
-  /**
-   * Headers for requests
-   * @param requestContext 
+   * Get authorization for getting named versions
    * @returns 
    */
-  public getHeaderOptions(accessToken: AccessToken) {
-    return {
-      Authorization: accessToken.toTokenString(IncludePrefix.Yes),
-    }
+  public static async getAuthorization(): Promise<Authorization> {
+    if (!IModelApp.authorizationClient)
+      throw new Error("AuthorizationClient is not defined. Most likely IModelApp.startup was not called yet.");
+
+    const token = await IModelApp.authorizationClient.getAccessToken();
+    const parts = token.split(" ");
+    return parts.length === 2
+      ? { scheme: parts[0], token: parts[1] }
+      : { scheme: "Bearer", token };
   }
 
   /**
@@ -87,34 +75,33 @@ export class ChangedElementsClient {
     startChangesetId: string,
     endChangesetId: string
   ): Promise<ChangedElements | undefined> {
-    const accessToken = await this.getAccessToken();
-    if (accessToken === undefined) {
-      throw new Error("Could not get access token");
-    }
-    // Create a request context
-    const requestContext = new AuthorizedClientRequestContext(accessToken);
-    // Parse out iModel Id and Project Id
+    // Parse out iModel Id and iTwin Id
     const iModelId = iModel.iModelId;
-    const projectId = iModel.contextId;
+    const iTwinId = iModel.iTwinId;
     // Ensure they are properly defined
-    if (iModelId === undefined || projectId === undefined) {
+    if (iModelId === undefined || iTwinId === undefined) {
       throw new Error("IModel is not properly defined");
     }
 
     // Get the request URL for the comparison operation
-    const url: string = this.getComparisonOperationUrl(iModelId, projectId, startChangesetId, endChangesetId);
+    const url: string = this.getComparisonOperationUrl(iModelId, iTwinId, startChangesetId, endChangesetId);
     // Options for the request
-    const options: RequestOptions = {
+    const authorization = await ChangedElementsClient.getAuthorization()
+    const options = {
       method: "GET",
-      headers: this.getHeaderOptions(accessToken)
+      headers: {
+        Authorization: `${authorization.scheme} ${authorization.token}`,
+        Accept: "application/vnd.bentley.itwin-platform.v1+json",
+      },
     };
     try {
       // Execute the request
-      const response = await request(requestContext, url, options);
+      const response = await fetch(url, options);
       // Ensure we got a proper response
-      if (response.status === 200 && response.body?.changedElements !== undefined) {
+      const body = await response.json();
+      if (response.status === 200 && body?.changedElements !== undefined) {
         // If so, cast the changedElements object of the body as a ChangedElements type
-        return response.body.changedElements as ChangedElements;
+        return body.changedElements as ChangedElements;
       }
       // Something went wrong, log it to console
       console.error("Could not get changed elements. Status: " + response.status + ". Body: " + response.body);
@@ -139,35 +126,34 @@ export class ChangedElementsClient {
     iModel: IModelConnection,
     value: boolean,
   ): Promise<boolean> {
-    const accessToken = await this.getAccessToken();
-    if (accessToken === undefined) {
-      throw new Error("Could not get access token");
-    }
-    // Create a request context
-    const requestContext = new AuthorizedClientRequestContext(accessToken);
-    // Parse out iModel Id and Project Id
+    // Parse out iModel Id and iTwin Id
     const iModelId = iModel.iModelId;
-    const projectId = iModel.contextId;
+    const iTwinId = iModel.iTwinId;
     // Ensure they are properly defined
-    if (iModelId === undefined || projectId === undefined) {
+    if (iModelId === undefined || iTwinId === undefined) {
       throw new Error("IModel is not properly defined");
     }
 
     // Get the request URL for the comparison operation
     const url: string = this.getEnableChangeTrackingUrl();
+
+    const authorization = await ChangedElementsClient.getAuthorization()
     // Options for the request
-    const options: RequestOptions = {
+    const options = {
       method: "PUT",
-      headers: this.getHeaderOptions(accessToken),
-      body: {
+      headers: {
+        Authorization: `${authorization.scheme} ${authorization.token}`,
+        Accept: "application/vnd.bentley.itwin-platform.v1+json",
+      },
+      body: JSON.stringify({
         enable: value,
         iModelId,
-        projectId,
-      }
+        iTwinId,
+      })
     };
     try {
       // Execute the request
-      const response = await request(requestContext, url, options);
+      const response = await fetch(url, options);
       // Ensure we get a proper response
       if (response.status === 202) {
         return true;
