@@ -34,6 +34,20 @@ export class Auth {
         "Client not initialized. Please call `Auth.initialize(BrowserAuthorizationClientConfiguration)`"
       );
     }
-    this._client.handleSigninCallback();
+  
+    // Extract the "code" from the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const authCode = urlParams.get("code");
+  
+    if (!authCode) {
+      console.error("Authorization code not found in redirect URL.");
+      return;
+    }
+  
+    console.log("Authorization Code:", authCode);
+  
+    // Handle the authentication response
+    await this._client.handleSigninCallback();
   }
+  
 }
