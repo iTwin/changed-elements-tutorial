@@ -50,7 +50,7 @@ export class ChangedElementClient {
         try {
             const response = await fetch(url, options);
             if (!response.ok) {
-            throw new Error(response.statusText);
+              throw new Error(response.statusText);
             }
             const data = await response.json();
             console.log("Comparison job created successfully:", data); //@todo - naron: this needs to be put outside or other console log needs to be put inside
@@ -61,7 +61,7 @@ export class ChangedElementClient {
         }
     }
 
-    public static async getComparisonJob(iModel:IModelConnection, startChangesetId: string | null, endChangesetId: string | undefined): Promise<any> {
+    public static async getComparisonJob(iModel:IModelConnection, startChangesetId: string | null, endChangesetId: string | undefined){
         const iModelId = iModel.iModelId;
         const iTwinId = iModel.iTwinId;
         
@@ -88,16 +88,13 @@ export class ChangedElementClient {
 
         try {
             const response = await fetch(url, options);
+            if (response.status === 404) {
+                return null;  // job not found is expected since it gets triggered every 5 seconds
+            }
             if (!response.ok) {
                 throw new Error(response.statusText);
             }
             const data = await response.json();
-            console.log("Comparison job data:", data);
-
-            console.log("current progress", data?.comparisonJob?.currentProgress);
-            console.log("Comparison job progress:", 
-                ((data?.comparisonJob?.currentProgress / data?.comparisonJob?.maxProgress) * 100).toFixed(2) + "%"
-            );
 
             return data;
         } catch (error) {

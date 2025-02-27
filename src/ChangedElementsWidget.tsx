@@ -9,7 +9,7 @@ import {
   } from "@itwin/imodels-client-management";
 import { ChangedElementClient } from "./changedElementsClient";
 import { VisualizeChange } from "./VisualizeChange";
-import { Button, LabeledSelect } from "@itwin/itwinui-react";
+import { Button, LabeledSelect, toaster, Text } from "@itwin/itwinui-react";
 
 export interface ChangedElementsWidgetProps {
     iModel: IModelConnection | undefined;
@@ -41,10 +41,46 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) { //@to
         fetchVersions();
     }, [props.iModel]);
 
+
     const [namedVersions, setNamedVersions] = useState<NamedVersion[]>([]);
     const currentChangesetID = props.iModel?.changeset.id;
     const [selectedVersionIndex, setSelectedVersionIndex] = useState<number>(0);
     const namedVersionsOptions = namedVersions.map((version, index) => ({ value: index, label: `${version.displayName}` }));
+    const [startComparisonJob, setStartComparisonJob] = useState<boolean>(false); 
+    const [progress, setProgress] = useState<string>("0%");
+    
+    // fetch progress every 5 seconds
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+    
+        const fetchProgress = async () => {
+            if (!props.iModel || !namedVersions[selectedVersionIndex]) return;
+            try {
+                const comparisonData = await ChangedElementClient.getComparisonJob(props.iModel, namedVersions[selectedVersionIndex].changesetId, currentChangesetID);
+                if (comparisonData === null){
+                    setProgress("Job not found");
+                    return; 
+                }
+                const progressPercentage = comparisonData?.comparisonJob?.currentProgress && comparisonData?.comparisonJob?.maxProgress
+                    ? ((comparisonData.comparisonJob.currentProgress / comparisonData.comparisonJob.maxProgress) * 100).toFixed(2) + "%"
+                    : "0%";
+    
+                setProgress(progressPercentage);
+            } catch (error : any) {
+                toaster.negative(
+                    <>
+                      <Text>Failed to fetch comparison progress</Text>
+                        <Text variant="small">  {error instanceof Error ? error.message : String(error)}</Text>
+                    </>);
+
+            }
+        };
+        
+        fetchProgress();
+        interval = setInterval(fetchProgress, 5000); // Fetch every 5 seconds
+    
+        return () => clearInterval(interval);
+    }, [props.iModel, selectedVersionIndex, startComparisonJob]);
 
     return (
         <div>
@@ -58,56 +94,87 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) { //@to
             ></LabeledSelect>
             
             <Button 
-                // @todo - naron: actually create comparison/delete doesnt need to be async? still need result to check whether the response go through?
+                // @todo - naron: create comparison/delete doesnt need to be async? still need result to check whether the response go through?
                 onClick={async () => {
                     if (!props.iModel) return; 
                     try {
                         const data = await ChangedElementClient.createComparisonJob(props.iModel, namedVersions[selectedVersionIndex].changesetId, currentChangesetID);
-                        console.log ("Create Comparison Job Response:", data);
+                        toaster.positive(
+                            <>
+                                <Text>Comparison job created successfully.</Text>
+                            </>
+                        );
+                        startComparisonJob ? setStartComparisonJob(false) : setStartComparisonJob(true);
                     } catch (error) {
-                        console.error("Failed to create comparison job:", error);
+                        toaster.negative(
+                            <>
+                                <Text>Failed to visualize comparison</Text>
+                                <Text variant="small">  {error instanceof Error ? error.message : String(error)}</Text>
+                            </>
+                        );
                     }
                 }}
             >
             Create Comparison
             </Button>
-
+            <Text>Comparison Progress: {progress}</Text>
 
             <Button
-                // @todo - naron: maybe enculpsulate this in a function getAndVisualizeComparison
                 onClick={async () => {
                     if (!props.iModel) return; 
                     try {
-                        const comparisonData = await ChangedElementClient.getComparisonJob(props.iModel, namedVersions[selectedVersionIndex].changesetId, currentChangesetID);
+                        const comparisonData = await ChangedElementClient.getComparisonJob(
+                            props.iModel, 
+                            namedVersions[selectedVersionIndex].changesetId, 
+                            currentChangesetID
+                        );
                         const href = comparisonData?.comparisonJob?.comparison?.href;
-                        if (href){
+                        if (href) {
                             const changedElements = await ChangedElementClient.getChangedElementsFromHref(href);
-                            console.log("Changed Elements:", changedElements);
                             if (changedElements) {
-                                // Visualize the comparison
                                 VisualizeChange.visualizeComparison(changedElements);
                             }
                         }
                     } catch (error) {
-                        console.error("Failed to visualize:", error);
+                        toaster.negative(
+                            <>
+                                <Text>Failed to visualize comparison</Text>
+                                <Text variant="small">  {error instanceof Error ? error.message : String(error)}</Text>
+                            </>
+                        );
                     }
-                }}>Visualize Comparison</Button>
+                }}
+            >
+                Visualize Comparison
+            </Button>
 
             <Button 
-                onClick={
-                async () => {
+                onClick={async () => {
                     if (!props.iModel) return;
                     try {
-                        const success = await ChangedElementClient.deleteComparisonJob(props.iModel, namedVersions[selectedVersionIndex].changesetId, currentChangesetID);
+                        const success = await ChangedElementClient.deleteComparisonJob(
+                            props.iModel, 
+                            namedVersions[selectedVersionIndex].changesetId, 
+                            currentChangesetID
+                        );
                         if (success) {
-                            console.log("Comparison job deleted successfully.");
+                            toaster.positive(<Text>Comparison job deleted successfully.</Text>);
                         } else {
-                            console.error("Failed to delete comparison job.");
+                            toaster.negative(<Text>Failed to delete comparison job.</Text>);
                         }
+                        startComparisonJob ? setStartComparisonJob(false) : setStartComparisonJob(true);
                     } catch (error) {
-                        console.error("Error deleting comparison job:", error);
+                        toaster.negative(
+                            <>
+                                <Text>Error deleting comparison job</Text>
+                                <Text variant="small">  {error instanceof Error ? error.message : String(error)}</Text>
+                            </>
+                        );
                     }
-            }}>Delete Comparison</Button>
+                }}
+            >
+                Delete Comparison
+            </Button>
         </div>
     );
 }
