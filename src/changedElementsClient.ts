@@ -50,14 +50,14 @@ export class ChangedElementClient {
         try {
             const response = await fetch(url, options);
             if (!response.ok) {
-              throw new Error(response.statusText);
+              const errBody = await response.json()
+              throw new Error(`${errBody?.error?.message}`);
             }
             const data = await response.json();
-            console.log("Comparison job created successfully:", data); //@todo - naron: this needs to be put outside or other console log needs to be put inside
+            console.log("Comparison job created successfully:", data); 
             return data?.comparisonJob;
         } catch (error) {
-            console.error(error);
-            return undefined;
+            throw error;
         }
     }
 
@@ -92,13 +92,14 @@ export class ChangedElementClient {
                 return null;  // job not found is expected since it gets triggered every 5 seconds
             }
             if (!response.ok) {
-                throw new Error(response.statusText);
+              const errBody = await response.json()
+              throw new Error(`${errBody?.error?.message}`);
             }
             const data = await response.json();
 
             return data;
         } catch (error) {
-            console.error(error);
+            // console.error(error);
             throw error;
         }
     }
@@ -116,8 +117,7 @@ export class ChangedElementClient {
           const data = await response.json();
           return data?.changedElements as ChangedElements;
         } catch (error) {
-          console.error(error);
-          return undefined;
+          throw error;
         }
     }
 
@@ -144,13 +144,13 @@ export class ChangedElementClient {
         try {
           const response = await fetch(url, options);
           if (!response.ok) {
-            throw new Error(response.statusText);
+            const errBody = await response.json()
+            throw new Error(`${errBody?.error?.message}`);
           }
           // If successful, it returns 204 No Content
           return true;
         } catch (error) {
-          console.error(error);
-          return false;
+          throw error;
         }
     }
 }

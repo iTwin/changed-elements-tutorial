@@ -66,7 +66,7 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) { //@to
                     : "0%";
     
                 setProgress(progressPercentage);
-            } catch (error : any) {
+            } catch (error : any) {                
                 toaster.negative(
                     <>
                       <Text>Failed to fetch comparison progress</Text>
@@ -98,7 +98,7 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) { //@to
                 onClick={async () => {
                     if (!props.iModel) return; 
                     try {
-                        const data = await ChangedElementClient.createComparisonJob(props.iModel, namedVersions[selectedVersionIndex].changesetId, currentChangesetID);
+                        await ChangedElementClient.createComparisonJob(props.iModel, namedVersions[selectedVersionIndex].changesetId, currentChangesetID);
                         toaster.positive(
                             <>
                                 <Text>Comparison job created successfully.</Text>
@@ -108,7 +108,7 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) { //@to
                     } catch (error) {
                         toaster.negative(
                             <>
-                                <Text>Failed to visualize comparison</Text>
+                                <Text>Failed to create comparison</Text>
                                 <Text variant="small">  {error instanceof Error ? error.message : String(error)}</Text>
                             </>
                         );
@@ -128,6 +128,10 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) { //@to
                             namedVersions[selectedVersionIndex].changesetId, 
                             currentChangesetID
                         );
+                        if (!comparisonData) { // this means an error 404 which is expected
+                            toaster.negative(<Text>Comparison job not found</Text>);
+                            return;
+                        }
                         const href = comparisonData?.comparisonJob?.comparison?.href;
                         if (href) {
                             const changedElements = await ChangedElementClient.getChangedElementsFromHref(href);
