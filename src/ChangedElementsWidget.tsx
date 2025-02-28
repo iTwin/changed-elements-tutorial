@@ -10,16 +10,14 @@ import {
 import { ChangedElementClient } from "./changedElementsClient";
 import { VisualizeChange } from "./VisualizeChange";
 import { Button, LabeledSelect, toaster, Text } from "@itwin/itwinui-react";
+import "./ChangedElementsWidget.scss";
+
 
 export interface ChangedElementsWidgetProps {
     iModel: IModelConnection | undefined;
 }
 
 export function ChangedElementsWidget(props: ChangedElementsWidgetProps) { //@todo - naron: seemed like I can use useActiveIModelConnection() from @itwin/appui-react
-    // if (!props.iModel) {
-    //     return <div>No iModel Connection</div>;
-    // }
-
     useEffect(() => {
         const fetchVersions = async () => {
             if (!props.iModel?.iModelId) return;
@@ -83,8 +81,8 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) { //@to
     }, [props.iModel, selectedVersionIndex, startComparisonJob]);
 
     return (
-        <div>
-            <h3>Changed Element Widget</h3>
+        <div  className="widget-container">
+            <h3>Changed Element Widget</h3> {/* @todo - naron: use bentley's text element? */ }
             <LabeledSelect
                 label="Select Version"
                 displayStyle="inline"
@@ -93,7 +91,9 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) { //@to
                 onChange={(value)=> {setSelectedVersionIndex(value)}}
             ></LabeledSelect>
             
+            <div>
             <Button 
+                className="widget-button"
                 // @todo - naron: create comparison/delete doesnt need to be async? still need result to check whether the response go through?
                 onClick={async () => {
                     if (!props.iModel) return; 
@@ -116,10 +116,12 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) { //@to
                 }}
             >
             Create Comparison
+            <Text className="widget-progress-text">Comparison Progress: {progress}</Text>
             </Button>
-            <Text>Comparison Progress: {progress}</Text>
+            </div>
 
             <Button
+                className="widget-button"
                 onClick={async () => {
                     if (!props.iModel) return; 
                     try {
@@ -153,6 +155,7 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) { //@to
             </Button>
 
             <Button 
+                className="widget-button"
                 onClick={async () => {
                     if (!props.iModel) return;
                     try {
