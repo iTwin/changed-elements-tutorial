@@ -35,7 +35,7 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) {
         fetchVersions();
     }, [props.iModel]);
 
-    // fetch progress every 3 seconds 
+    // fetch progress every 3 seconds OR when selected version changes / comparisonActive changes / initial load
     useEffect(() => {
         let interval: NodeJS.Timeout;
     
