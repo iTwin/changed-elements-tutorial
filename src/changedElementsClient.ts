@@ -1,5 +1,5 @@
 import { IModelApp, IModelConnection } from "@itwin/core-frontend"
-import { Authorization } from "@itwin/imodels-client-management";
+import { Authorization, IModelsClient, NamedVersion, NamedVersionState, toArray } from "@itwin/imodels-client-management";
 import { ChangedElements } from "@itwin/core-common";
 
 
@@ -15,7 +15,35 @@ export class ChangedElementClient {
           ? { scheme: parts[0], token: parts[1] }
           : { scheme: "Bearer", token };
     }
+
+    static async fetchProgress(iModel: IModelConnection, startChangesetId: string | null, endChangesetId: string | undefined): Promise<string> {
+      try {
+          const comparisonData = await ChangedElementClient.getComparisonJob(iModel, startChangesetId, endChangesetId);
+          if (comparisonData === null) {
+              return "Job not found";
+          }
+          return comparisonData?.comparisonJob?.currentProgress && comparisonData?.comparisonJob?.maxProgress
+              ? ((comparisonData.comparisonJob.currentProgress / comparisonData.comparisonJob.maxProgress) * 100).toFixed(2) + "%"
+              : "0%";
+      } catch (error: any) {
+          throw new Error(error instanceof Error ? error.message : String(error));
+      }
+    }
+
+    static async fetchVisibleNamedVersions(iModelId: string): Promise<NamedVersion[]> {
+      const client = new IModelsClient();
+      const iModelIterator = client.namedVersions.getRepresentationList({
+        urlParams: { $top: 10 },
+        iModelId,
+        authorization: () => ChangedElementClient.getAuthorization(),
+      });
     
+      const versions = (await toArray(iModelIterator)).filter(
+        (v) => v.state === NamedVersionState.Visible
+      );
+      return versions;
+    }
+
     public static async createComparisonJob(iModel:IModelConnection ,startChangesetId: string | null, endChangesetId: string | undefined) {
         const iModelId = iModel.iModelId;
         const iTwinId = iModel.iTwinId;
@@ -89,7 +117,7 @@ export class ChangedElementClient {
         try {
             const response = await fetch(url, options);
             if (response.status === 404) {
-                return null;  // job not found is expected since it gets triggered every 5 seconds
+                return null;  // job not found is expected since it gets triggered in interval
             }
             if (!response.ok) {
               const errBody = await response.json()
@@ -99,7 +127,6 @@ export class ChangedElementClient {
 
             return data;
         } catch (error) {
-            // console.error(error);
             throw error;
         }
     }
@@ -153,4 +180,6 @@ export class ChangedElementClient {
           throw error;
         }
     }
-}
+
+  
+  }
