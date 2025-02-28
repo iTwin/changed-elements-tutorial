@@ -82,7 +82,6 @@ export class ChangedElementClient {
               throw new Error(`${errBody?.error?.message}`);
             }
             const data = await response.json();
-            console.log("Comparison job created successfully:", data); 
             return data?.comparisonJob;
         } catch (error) {
             throw error;

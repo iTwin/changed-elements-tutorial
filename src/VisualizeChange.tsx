@@ -1,5 +1,5 @@
-import { EmphasizeElements, FeatureOverrideProvider, FeatureSymbology, IModelApp, Viewport } from "@itwin/core-frontend";
-import { ChangedElements, ColorDef, FeatureAppearance, RgbColor } from "@itwin/core-common";
+import { FeatureOverrideProvider, FeatureSymbology, IModelApp, Viewport } from "@itwin/core-frontend";
+import { ChangedElements, ColorDef, FeatureAppearance } from "@itwin/core-common";
 import { Id64Array, DbOpcode } from "@itwin/core-bentley";
 import { Text, toaster } from "@itwin/itwinui-react";
 
