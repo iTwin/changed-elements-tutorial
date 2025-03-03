@@ -49,25 +49,7 @@ import {
 } from "@itwin/appui-react";
 
 // import { IModelConnection } from "@itwin/core-frontend";
-import { ChangedElementsWidget } from "./ChangedElementsWidget";
 import { UiFramework } from "@itwin/appui-react";
-
-
-const exampleProvider: UiItemsProvider = {
-  id: "example:Provider",
-  getWidgets: () => [
-    {
-      id: "example:Widget",
-      content: <ChangedElementsWidget iModel={UiFramework.getIModelConnection()}/>,
-      layouts: {
-        standard: {
-          location: StagePanelLocation.Right,
-          section: StagePanelSection.Start,
-        },
-      },
-    },
-  ],
-};
 
 
 const App: React.FC = () => {
@@ -260,7 +242,6 @@ const App: React.FC = () => {
             },
           }),
           new MeasureToolsUiItemsProvider(),
-          exampleProvider
         ]}
         selectionStorage={unifiedSelectionStorage}
         getSchemaContext={getSchemaContext}
