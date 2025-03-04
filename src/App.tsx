@@ -42,16 +42,6 @@ import { Auth } from "./Auth";
 import { history } from "./history";
 import { getSchemaContext, unifiedSelectionStorage } from "./selectionStorage";
 
-import {
-  StagePanelLocation,
-  StagePanelSection,
-  UiItemsProvider,
-} from "@itwin/appui-react";
-
-// import { IModelConnection } from "@itwin/core-frontend";
-import { UiFramework } from "@itwin/appui-react";
-
-
 const App: React.FC = () => {
   const [iModelId, setIModelId] = useState(process.env.IMJS_IMODEL_ID);
   const [iTwinId, setITwinId] = useState(process.env.IMJS_ITWIN_ID);
