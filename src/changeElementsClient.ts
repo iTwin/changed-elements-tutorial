@@ -4,7 +4,6 @@ import { ChangedElements } from "@itwin/core-common";
 
 
 export class ChangedElementClient {
-
     public static async getAuthorization(): Promise<Authorization> {
         if (!IModelApp.authorizationClient)
           throw new Error("AuthorizationClient is not defined. Most likely IModelApp.startup was not called yet.");
@@ -16,35 +15,21 @@ export class ChangedElementClient {
           : { scheme: "Bearer", token };
     }
 
-    static async fetchProgress(iModel: IModelConnection, startChangesetId: string | null, endChangesetId: string | undefined): Promise<string> {
-      try {
-          const comparisonData = await ChangedElementClient.getComparisonJob(iModel, startChangesetId, endChangesetId);
-          if (comparisonData === null) {
-              return "Job not found";
-          }
-          return comparisonData?.comparisonJob?.currentProgress && comparisonData?.comparisonJob?.maxProgress
-              ? ((comparisonData.comparisonJob.currentProgress / comparisonData.comparisonJob.maxProgress) * 100).toFixed(2) + "%"
-              : "0%";
-      } catch (error: any) {
-          throw error;
-      }
-    }
-
     static async fetchVisibleNamedVersions(iModelId: string): Promise<NamedVersion[]> {
-      const client = new IModelsClient();
-      const iModelIterator = client.namedVersions.getRepresentationList({
-        urlParams: { $top: 10 },
-        iModelId,
-        authorization: () => ChangedElementClient.getAuthorization(),
-      });
+        const client = new IModelsClient();
+        const iModelIterator = client.namedVersions.getRepresentationList({
+          urlParams: { $top: 10 },
+          iModelId,
+          authorization: () => ChangedElementClient.getAuthorization(),
+        });
+      
+        const versions = (await toArray(iModelIterator)).filter(
+          (v) => v.state === NamedVersionState.Visible
+        );
+        return versions;
+      }
     
-      const versions = (await toArray(iModelIterator)).filter(
-        (v) => v.state === NamedVersionState.Visible
-      );
-      return versions;
-    }
-
-    public static async createComparisonJob(iModel:IModelConnection ,startChangesetId: string | null, endChangesetId: string | undefined) {
+      public static async createComparisonJob(iModel:IModelConnection ,startChangesetId: string | null, endChangesetId: string | undefined) {
         const iModelId = iModel.iModelId;
         const iTwinId = iModel.iTwinId;
         
@@ -54,9 +39,9 @@ export class ChangedElementClient {
         if (startChangesetId === null || endChangesetId === undefined) {
             throw new Error("Changeset IDs are not properly defined");
         }
-
+  
         const authorization = await this.getAuthorization();
-
+  
         const url = "https://api.bentley.com/changedelements/comparisonjob";
         const body = {
             iTwinId,
@@ -64,22 +49,22 @@ export class ChangedElementClient {
             startChangesetId,
             endChangesetId
         };
-
+  
         const options = {
             method: "POST",
             headers: {
-            Authorization: `${authorization.scheme} ${authorization.token}`,
+            Authorization: authorization.scheme.toString() + " " + authorization.token.toString(),
             "Content-Type": "application/json",
             Accept: "application/vnd.bentley.itwin-platform.v2+json"
             },
             body: JSON.stringify(body)
         };
-
+  
         try {
             const response = await fetch(url, options);
             if (!response.ok) {
               const errBody = await response.json()
-              throw new Error(`${errBody?.error?.message}`);
+              throw new Error(errBody?.error?.message.toString());
             }
             const data = await response.json();
             return data?.comparisonJob;
@@ -87,8 +72,8 @@ export class ChangedElementClient {
             throw error;
         }
     }
-
-    public static async getComparisonJob(iModel:IModelConnection, startChangesetId: string | null, endChangesetId: string | undefined){
+  
+      public static async deleteComparisonJob(iModel:IModelConnection, startChangesetId: string | null, endChangesetId: string | undefined): Promise<boolean> {
         const iModelId = iModel.iModelId;
         const iTwinId = iModel.iTwinId;
         
@@ -97,22 +82,60 @@ export class ChangedElementClient {
         }
 
         if (startChangesetId === null || endChangesetId === undefined) {
+            throw new Error("Changeset IDs are not properly defined");
+        }
+  
+        const jobId = startChangesetId.toString() + "-" + endChangesetId.toString();
+  
+        const authorization = await this.getAuthorization();
+        const url = "https://api.bentley.com/changedelements/comparisonjob/" + jobId.toString() + "/itwin/" + iTwinId.toString() + "/imodel/" + iModelId.toString();
+        const options = {
+          method: "DELETE",
+          headers: {
+            Authorization: authorization.scheme.toString() + " " + authorization.token.toString(),
+            Accept: "application/vnd.bentley.itwin-platform.v2+json",
+          },
+        };
+    
+        try {
+          const response = await fetch(url, options);
+          if (!response.ok) {
+            const errBody = await response.json()
+            throw new Error(errBody?.error?.message.toString());
+          }
+          // If successful, it returns 204 No Content
+          return true;
+        } catch (error) {
+          throw error;
+        }
+    }
+  
+  
+    public static async getComparisonJob(iModel:IModelConnection, startChangesetId: string | null, endChangesetId: string | undefined){
+        const iModelId = iModel.iModelId;
+        const iTwinId = iModel.iTwinId;
+        
+        if (iModelId === undefined || iTwinId === undefined) {
+            throw new Error("IModel is not properly defined");
+        }
+  
+        if (startChangesetId === null || endChangesetId === undefined) {
           throw new Error("Changeset IDs are not properly defined");
         }
-
+  
         const authorization = await this.getAuthorization();
-        const jobId = `${startChangesetId}-${endChangesetId}`;
-
-        const url = `https://api.bentley.com/changedelements/comparisonjob/${jobId}/itwin/${iTwinId}/imodel/${iModelId}`;
-
+        const jobId = startChangesetId.toString() + "-" + endChangesetId.toString();
+  
+        const url = "https://api.bentley.com/changedelements/comparisonjob/" + jobId.toString() + "/itwin/" + iTwinId.toString() + "/imodel/" + iModelId.toString();
+  
         const options = {
             method: "GET",
             headers: {
-                Authorization: `${authorization.scheme} ${authorization.token}`,
+                Authorization: authorization.scheme.toString() + " " + authorization.token.toString(),
                 Accept: "application/vnd.bentley.itwin-platform.v2+json",
             },
         };
-
+  
         try {
             const response = await fetch(url, options);
             if (response.status === 404) {
@@ -120,10 +143,10 @@ export class ChangedElementClient {
             }
             if (!response.ok) {
               const errBody = await response.json()
-              throw new Error(`${errBody?.error?.message}`);
+              throw new Error(errBody?.error?.message.toString());
             }
             const data = await response.json();
-
+  
             return data;
         } catch (error) {
             throw error;
@@ -147,38 +170,19 @@ export class ChangedElementClient {
         }
     }
 
-    public static async deleteComparisonJob(iModel:IModelConnection, startChangesetId: string | null, endChangesetId: string | undefined): Promise<boolean> {
-        const iModelId = iModel.iModelId;
-        const iTwinId = iModel.iTwinId;
-        
-        if (iModelId === undefined || iTwinId === undefined) {
-            throw new Error("IModel is not properly defined");
-        }
-
-        const jobId = `${startChangesetId}-${endChangesetId}`;
-
-        const authorization = await this.getAuthorization();
-        const url = `https://api.bentley.com/changedelements/comparisonjob/${jobId}/itwin/${iTwinId}/imodel/${iModelId}`;
-        const options = {
-          method: "DELETE",
-          headers: {
-            Authorization: `${authorization.scheme} ${authorization.token}`,
-            Accept: "application/vnd.bentley.itwin-platform.v2+json",
-          },
-        };
-    
+    static async fetchProgress(iModel: IModelConnection, startChangesetId: string | null, endChangesetId: string | undefined): Promise<string> {
         try {
-          const response = await fetch(url, options);
-          if (!response.ok) {
-            const errBody = await response.json()
-            throw new Error(`${errBody?.error?.message}`);
-          }
-          // If successful, it returns 204 No Content
-          return true;
-        } catch (error) {
-          throw error;
+            const comparisonData = await ChangedElementClient.getComparisonJob(iModel, startChangesetId, endChangesetId);
+            if (comparisonData === null) {
+                return "Job not found";
+            }
+            return comparisonData?.comparisonJob?.currentProgress && comparisonData?.comparisonJob?.maxProgress
+                ? ((comparisonData.comparisonJob.currentProgress / comparisonData.comparisonJob.maxProgress) * 100).toFixed(2) + "%"
+                : "0%";
+        } catch (error: any) {
+            throw error;
         }
-    }
-
-  
-  }
+      }
+    
+    
+}

@@ -52,7 +52,7 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) {
                 toaster.negative(
                     <>
                     <Text>Failed to fetch comparison progress</Text>
-                    <Text variant="small">{error instanceof Error ? error.message : String(error)}</Text>
+                    <Text variant="small">{error instanceof Error && error.message !== undefined ? error.message : "Error fetching progress"}</Text>
                     </>
                 );
             }
@@ -81,8 +81,8 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) {
           toaster.negative(
             <>
               <Text>Failed to create comparison</Text>
-              <Text variant="small">{error instanceof Error ? error.message : String(error)}</Text>
-            </>
+              <Text variant="small">{error instanceof Error && error.message !== undefined ? error.message : "Error creating comparison"}</Text>
+              </>
           );
         }
       };
@@ -113,7 +113,7 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) {
                 toaster.negative(
                 <>
                     <Text>Failed to visualize comparison</Text>
-                    <Text variant="small">{error instanceof Error ? error.message : String(error)}</Text>
+                    <Text variant="small">{error instanceof Error && error.message !== undefined ? error.message : "Error getting comparison"}</Text>
                 </>
                 );
         }
@@ -133,7 +133,7 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) {
             toaster.negative(
             <>
                 <Text>Error deleting comparison job</Text>
-                <Text variant="small">{error instanceof Error ? error.message : String(error)}</Text>
+                <Text variant="small">{error instanceof Error && error.message !== undefined ? error.message : "Error deleting comparison"}</Text>
             </>
             );
         }
