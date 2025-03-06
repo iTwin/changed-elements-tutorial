@@ -129,6 +129,7 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) {
                 );
  
             setComparisonActive(!comparisonActive);
+            toaster.positive(<Text>Comparison job deleted successfully.</Text>)
         } catch (error) {
             toaster.negative(
             <>
