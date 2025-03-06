@@ -194,6 +194,7 @@ const App: React.FC = () => {
           },
         }}
         uiProviders={[
+          changedElementsWidgetProvider,
           new ViewerNavigationToolsProvider(),
           new ViewerContentToolsProvider({
             vertical: {
@@ -261,6 +262,7 @@ const App: React.FC = () => {
         ]}
         selectionStorage={unifiedSelectionStorage}
         getSchemaContext={getSchemaContext}
+        
       />
     </div>
   );
