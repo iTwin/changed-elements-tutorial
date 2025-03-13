@@ -18,7 +18,6 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) {
     const [comparisonActive, setComparisonActive] = useState<boolean>(false); 
     const [progress, setProgress] = useState<string>("0%");
 
-    const currentChangesetID = props.iModel?.changeset.id;    
     const namedVersionsOptions = namedVersions.map((version, index) => ({ 
         value: index, label: `${version.displayName}` 
     }));
@@ -44,16 +43,15 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) {
             try {
                 const progressPercentage = await ChangedElementClient.fetchProgress(
                     props.iModel,
-                    namedVersions[selectedVersionIndex].changesetId,
-                    currentChangesetID
+                    namedVersions[selectedVersionIndex].changesetId
                 );
                 setProgress(progressPercentage);
             } catch (error: any) {
                 toaster.negative(
                     <>
                     <Text>Failed to fetch comparison progress</Text>
-                    <Text variant="small">{error instanceof Error && error.message !== undefined ? error.message : "Error fetching progress"}</Text>
-                    </>
+                    <Text variant="small">{(error as Error)?.message ?? "Error fetching progress"}</Text>
+                </>
                 );
             }
         };
@@ -72,8 +70,7 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) {
         try {
           await ChangedElementClient.createComparisonJob(
             props.iModel, 
-            namedVersions[selectedVersionIndex].changesetId, 
-            currentChangesetID
+            namedVersions[selectedVersionIndex].changesetId
           );
           toaster.positive(<Text>Comparison job created successfully.</Text>);
           setComparisonActive(!comparisonActive);
@@ -81,8 +78,8 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) {
           toaster.negative(
             <>
               <Text>Failed to create comparison</Text>
-              <Text variant="small">{error instanceof Error && error.message !== undefined ? error.message : "Error creating comparison"}</Text>
-              </>
+              <Text variant="small">{(error as Error)?.message ?? "Error creating comparison"}</Text>
+            </>
           );
         }
       };
@@ -92,8 +89,7 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) {
         try {
             const comparisonData = await ChangedElementClient.getComparisonJob(
                 props.iModel, 
-                namedVersions[selectedVersionIndex].changesetId, 
-                currentChangesetID
+                namedVersions[selectedVersionIndex].changesetId
                 );
             if (!comparisonData) {
                 toaster.negative(<Text>Comparison job not found</Text>);
@@ -113,7 +109,7 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) {
                 toaster.negative(
                 <>
                     <Text>Failed to visualize comparison</Text>
-                    <Text variant="small">{error instanceof Error && error.message !== undefined ? error.message : "Error getting comparison"}</Text>
+                    <Text variant="small">{(error as Error)?.message ?? "Error getting comparison"}</Text>
                 </>
                 );
         }
@@ -124,8 +120,7 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) {
         try {
             await ChangedElementClient.deleteComparisonJob(
                 props.iModel, 
-                namedVersions[selectedVersionIndex].changesetId, 
-                currentChangesetID
+                namedVersions[selectedVersionIndex].changesetId
                 );
  
             setComparisonActive(!comparisonActive);
@@ -134,7 +129,7 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) {
             toaster.negative(
             <>
                 <Text>Error deleting comparison job</Text>
-                <Text variant="small">{error instanceof Error && error.message !== undefined ? error.message : "Error deleting comparison"}</Text>
+                <Text variant="small">{(error as Error)?.message ?? "Error deleting comparison"}</Text>
             </>
             );
         }

@@ -27,17 +27,18 @@ export class ChangedElementClient {
           (v) => v.state === NamedVersionState.Visible
         );
         return versions;
-      }
+    }
     
-      public static async createComparisonJob(iModel:IModelConnection ,startChangesetId: string | null, endChangesetId: string | undefined) {
+    public static async createComparisonJob(iModel:IModelConnection, startChangesetId: string | null) {
         const iModelId = iModel.iModelId;
         const iTwinId = iModel.iTwinId;
+        const endChangesetId = iModel.changeset.id;
         
         if (iModelId === undefined || iTwinId === undefined) {
             throw new Error("IModel is not properly defined");
         }
-        if (startChangesetId === null || endChangesetId === undefined) {
-            throw new Error("Changeset IDs are not properly defined");
+        if (startChangesetId === null) {
+            throw new Error("start Changeset ID is not properly defined");
         }
   
         const authorization = await this.getAuthorization();
@@ -73,16 +74,17 @@ export class ChangedElementClient {
         }
     }
   
-      public static async deleteComparisonJob(iModel:IModelConnection, startChangesetId: string | null, endChangesetId: string | undefined): Promise<boolean> {
+    public static async deleteComparisonJob(iModel:IModelConnection, startChangesetId: string | null) {
         const iModelId = iModel.iModelId;
         const iTwinId = iModel.iTwinId;
-        
+        const endChangesetId = iModel.changeset.id;
+
         if (iModelId === undefined || iTwinId === undefined) {
             throw new Error("IModel is not properly defined");
         }
 
-        if (startChangesetId === null || endChangesetId === undefined) {
-            throw new Error("Changeset IDs are not properly defined");
+        if (startChangesetId === null) {
+          throw new Error("start Changeset ID is not properly defined");
         }
   
         const jobId = startChangesetId.toString() + "-" + endChangesetId.toString();
@@ -109,17 +111,17 @@ export class ChangedElementClient {
         }
     }
   
-  
-    public static async getComparisonJob(iModel:IModelConnection, startChangesetId: string | null, endChangesetId: string | undefined){
+    public static async getComparisonJob(iModel:IModelConnection, startChangesetId: string | null){
         const iModelId = iModel.iModelId;
         const iTwinId = iModel.iTwinId;
+        const endChangesetId = iModel.changeset.id;
         
         if (iModelId === undefined || iTwinId === undefined) {
             throw new Error("IModel is not properly defined");
         }
   
-        if (startChangesetId === null || endChangesetId === undefined) {
-          throw new Error("Changeset IDs are not properly defined");
+        if (startChangesetId === null) {
+          throw new Error("start Changeset ID is not properly defined");
         }
   
         const authorization = await this.getAuthorization();
@@ -169,19 +171,13 @@ export class ChangedElementClient {
         }
     }
 
-    static async fetchProgress(iModel: IModelConnection, startChangesetId: string | null, endChangesetId: string | undefined): Promise<string> {
-        try {
-            const comparisonData = await ChangedElementClient.getComparisonJob(iModel, startChangesetId, endChangesetId);
-            if (comparisonData === null) {
-                return "Job not found";
-            }
-            return comparisonData?.comparisonJob?.currentProgress && comparisonData?.comparisonJob?.maxProgress
-                ? ((comparisonData.comparisonJob.currentProgress / comparisonData.comparisonJob.maxProgress) * 100).toFixed(2) + "%"
-                : "0%";
-        } catch (error: any) {
-            throw error;
-        }
+    public static async fetchProgress(iModel: IModelConnection, startChangesetId: string | null): Promise<string> {
+      const comparisonData = await ChangedElementClient.getComparisonJob(iModel, startChangesetId);
+      if (comparisonData === null) {
+          return "Job not found";
       }
-    
-    
+      return comparisonData?.comparisonJob?.currentProgress && comparisonData?.comparisonJob?.maxProgress
+          ? ((comparisonData.comparisonJob.currentProgress / comparisonData.comparisonJob.maxProgress) * 100).toFixed(2) + "%"
+          : "0%";
+    }
 }
