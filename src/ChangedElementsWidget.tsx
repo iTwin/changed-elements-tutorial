@@ -12,7 +12,7 @@ export interface ChangedElementsWidgetProps {
 }
 
 export function ChangedElementsWidget(props: ChangedElementsWidgetProps) { 
-    //@todo - naron: seemed like I can use useActiveIModelConnection() from @itwin/appui-react to get the iModelConnection? so no need to pass it as a prop?
+    //@todo: seemed like useActiveIModelConnection() from @itwin/appui-react can be used here to get the iModelConnection? so no need to pass it as a prop?
     const [namedVersions, setNamedVersions] = useState<NamedVersion[]>([]);
     const [selectedVersionIndex, setSelectedVersionIndex] = useState<number>(0);
     const [comparisonActive, setComparisonActive] = useState<boolean>(false); 
@@ -142,7 +142,7 @@ export function ChangedElementsWidget(props: ChangedElementsWidgetProps) {
 
     return (
         <div  className="widget-container">
-            <h3>Changed Element Widget</h3> {/* @todo - naron: use bentley's text element? */ }
+            <Text>Changed Element Widget</Text>
             <LabeledSelect
                 label="Select Version"
                 displayStyle="inline"
