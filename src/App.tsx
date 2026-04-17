@@ -48,6 +48,7 @@ import {
   UiItemsProvider,
 } from "@itwin/appui-react";
 
+import { ChangedElementsWidget } from "./ChangedElementsWidget";
 import { UiFramework } from "@itwin/appui-react";
 
 
@@ -149,6 +150,22 @@ const App: React.FC = () => {
     MeasurementActionToolbar.setDefaultActionProvider();
   }, []);
 
+  const changedElementsWidgetProvider: UiItemsProvider = {
+    id: "example:Provider",
+    getWidgets: () => [
+      {
+        id: "example:Widget",
+        content: <ChangedElementsWidget iModel={UiFramework.getIModelConnection()} />,
+        layouts: {
+          standard: {
+            location: StagePanelLocation.Right,
+            section: StagePanelSection.Start,
+          },
+        },
+      },
+    ],
+  };
+
   return (
     <div className="viewer-container">
       {!accessToken && (
@@ -178,6 +195,7 @@ const App: React.FC = () => {
           },
         }}
         uiProviders={[
+          changedElementsWidgetProvider,
           new ViewerNavigationToolsProvider(),
           new ViewerContentToolsProvider({
             vertical: {

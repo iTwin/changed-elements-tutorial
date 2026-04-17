@@ -1,0 +1,16 @@
+.widget-container {
+  margin: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.widget-label {
+  color: white;
+  font-size: 14px;
+}
+
+.widget-progress-text {
+  font-size: 14px;
+  font-weight: bold;
+}
